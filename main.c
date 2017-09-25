@@ -1,5 +1,15 @@
 #include <stdio.h>
 
+#define NATURE_TEXT(nature) (nature ? (nature == 1 ? "NEUTRAL" : "POSITIVE") : "NEGATIVE")
+#define NATURE_MODIFER(nature) (nature ? (nature == 1 ? 1 : 1.1) : 0.9)
+
+#define STAT_VALUE(base, level, natureModifier) ((int) (((2 * base + iv) * level / 100 + 5) * natureModifier))
+#define BASE_DAMAGE(level, power, attack, defense) (((2 * level / 5 + 2) * power * attack / defense) / 50 + 2)
+#define DAMAGE_MODIFIERS(damageVar, roll, stab, se) (\
+    damageVar*= ((double)(85 + roll) / 100);\
+    if (stab) damageVar*= 1.5;\
+)
+
 static unsigned short damageRolls[20][3][32][16];
 /*                                |   |  |   |
  *                                |   |  |   +-----> Damage Rolls
@@ -35,23 +45,23 @@ static unsigned short encounteredDamageRolls[20][10] = {
 
 static inline void computeDamageRoll(int defense, int nature, int iv, int roll) {
     int defIndex = defense - 38;
-    double natureModifier = nature ? (nature == 1 ? 1 : 1.1) : 0.9;
+    double natureModifier = NATURE_MODIFER(nature);
 
-    int attack = (int) (((2 * 105 + iv) * 24 / 100 + 5) * natureModifier);
+    int attack = STAT_VALUE(105, 24, natureModifier);
     defense*= 2;
 
-    unsigned short effectiveDamage = ((2 * 24 / 5 + 2) * 125 * attack / defense) / 50 + 2;
+    unsigned short effectiveDamage = BASE_DAMAGE(24, 125, attack, defense);
     effectiveDamage*= (((double)(85 + roll) / 100));
     effectiveDamage*= 1.5; // Stab
     effectiveDamage*= 2; // SE
 
     damageRolls[defIndex][nature][iv][roll] = effectiveDamage;
 
-    printf("DEF: %d, Nature: %s, IV: %2d, Roll: %2d ----> %hu\n", defense / 2, nature ? (nature == 1 ? "NEUTRAL" : "POSITIVE") : "NEGATIVE", iv, roll + 1, effectiveDamage);
+    // printf("DEF: %d, Nature: %s, IV: %2d, Roll: %2d ----> %hu\n", defense / 2, NATURE_TEXT(nature), iv, roll + 1, effectiveDamage);
 
 }
 
-static inline void computeAllDamageRolls() {
+static void computeAllDamageRolls() {
     for (int popplioDefense = 38; popplioDefense <= 57; popplioDefense++) {
         for (int nature = 0; nature < 3; nature++) {
             for (int iv = 0; iv < 32; iv++) {
@@ -63,8 +73,28 @@ static inline void computeAllDamageRolls() {
     }
 }
 
+static inline int checkCombination(int nature, int iv, int evs) {
+    double natureModifier = NATURE_MODIFER(nature);
+}
+
+static void checkStaticIvsAndStaticNaturesTheory() {
+
+    printf("Checking theory: static IVs & static natures & static EVs (of 0)");
+
+    for (int nature = 0; nature < 3; ++nature) {
+        for (int iv = 0; iv < 32; ++iv) {
+            printf("Nature: %s, IV: %d - ", NATURE_TEXT(nature), iv);
+
+            if (checkCombination(nature, iv, 0)) {
+
+            }
+        }
+    }
+}
+
 
 int main() {
     computeAllDamageRolls();
+    checkStaticIvsAndStaticNaturesTheory();
     return 0;
 }
